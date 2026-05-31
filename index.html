@@ -248,7 +248,22 @@
   ::-webkit-scrollbar-track{background:transparent;}
   ::-webkit-scrollbar-thumb{background:rgba(245,200,66,0.3);border-radius:2px;}
 
-  @media(max-width:600px){
+  /* ===== SETTINGS ===== */
+  .setting-row{display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);}
+  .setting-label{font-family:'Cinzel',serif;font-size:0.8rem;color:var(--text);}
+  .setting-toggle{font-family:'Cinzel',serif;font-size:0.75rem;padding:6px 18px;border:1px solid var(--border);background:rgba(245,200,66,0.06);color:var(--gold);cursor:pointer;border-radius:3px;min-width:70px;transition:all 0.2s;}
+  .setting-toggle:hover{background:rgba(245,200,66,0.15);}
+  .setting-toggle.off{color:var(--text2);border-color:rgba(255,255,255,0.1);background:transparent;}
+  .secret-row{border:1px solid rgba(255,68,68,0.25);border-radius:6px;background:rgba(255,50,50,0.04);margin-top:4px;}
+  .secret-char-preview{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 12px;background:rgba(0,0,0,0.3);border-radius:6px;border:1px solid rgba(255,68,68,0.2);}
+  /* Toggle switch */
+  .secret-switch{position:relative;display:inline-block;width:46px;height:24px;}
+  .secret-switch input{opacity:0;width:0;height:0;}
+  .secret-slider{position:absolute;cursor:pointer;inset:0;background:#333;border-radius:24px;transition:.3s;}
+  .secret-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#888;border-radius:50%;transition:.3s;}
+  input:checked+.secret-slider{background:#ff4444;}
+  input:checked+.secret-slider:before{transform:translateX(22px);background:#fff;}
+
     .class-grid{grid-template-columns:1fr;}
     .class-card{flex-direction:row;padding:14px;gap:14px;text-align:left;}
     .class-icon{font-size:2.5rem;}
@@ -276,7 +291,7 @@
     <button class="menu-btn primary" onclick="showScreen('classSelect')">⚔ เริ่มผจญภัย</button>
     <button class="menu-btn" onclick="showLeaderboard()">🏆 ตารางคะแนน</button>
     <button class="menu-btn" onclick="toggleMute()">🎵 เพลงประกอบ: <span id="muteLabel">เปิด</span></button>
-    <button class="menu-btn" onclick="showScreen('classSelect')">⚙ ตั้งค่า</button>
+    <button class="menu-btn" onclick="showScreen('settingsScreen')">⚙ ตั้งค่า</button>
     <div class="menu-divider"></div>
   </div>
   <div class="version-tag">v1.0.0 AAA++ EDITION</div>
@@ -465,7 +480,72 @@
   </div>
 </div>
 
-<!-- FIREBASE + GAME SCRIPTS -->
+<!-- ===== SETTINGS ===== -->
+<div id="settingsScreen" class="screen">
+  <div style="position:absolute;inset:0;background:linear-gradient(180deg,#020205,#050510,#020205);"></div>
+  <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:100%;max-width:480px;margin:auto;padding:30px 20px;gap:0;">
+    <div style="font-family:'Cinzel Decorative',cursive;font-size:1.4rem;color:var(--gold);letter-spacing:4px;margin-bottom:6px;">⚙ ตั้งค่า</div>
+    <div style="color:var(--text2);font-size:0.7rem;letter-spacing:3px;margin-bottom:24px;">SETTINGS</div>
+
+    <!-- Sound -->
+    <div class="setting-row">
+      <span class="setting-label">🎵 เพลงประกอบ</span>
+      <button class="setting-toggle" id="musicToggle" onclick="toggleMute();updateSettingsUI()">เปิด</button>
+    </div>
+    <!-- Volume -->
+    <div class="setting-row">
+      <span class="setting-label">🔊 เสียง SFX</span>
+      <button class="setting-toggle" id="sfxToggle" onclick="toggleSFX();updateSettingsUI()">เปิด</button>
+    </div>
+    <!-- Graphics -->
+    <div class="setting-row">
+      <span class="setting-label">🖥 คุณภาพกราฟิก</span>
+      <button class="setting-toggle" onclick="cycleGfx();updateSettingsUI()" id="gfxToggle">สูง</button>
+    </div>
+    <!-- FOV -->
+    <div class="setting-row">
+      <span class="setting-label">👁 มุมมอง (FOV)</span>
+      <button class="setting-toggle" onclick="cycleFOV();updateSettingsUI()" id="fovToggle">70°</button>
+    </div>
+
+    <div style="width:100%;height:1px;background:rgba(245,200,66,0.15);margin:18px 0;"></div>
+
+    <!-- SECRET MODE -->
+    <div class="setting-row secret-row" id="secretRow">
+      <div>
+        <span class="setting-label" style="color:#ff4444;">🔴 โหมดลับ</span>
+        <div style="font-size:0.6rem;color:var(--text2);margin-top:2px;font-family:'Cinzel',serif;">Secret Mode — เปลี่ยน party เป็นแก๊งพิเศษ</div>
+      </div>
+      <label class="secret-switch">
+        <input type="checkbox" id="secretModeCheck" onchange="toggleSecretMode(this.checked)">
+        <span class="secret-slider"></span>
+      </label>
+    </div>
+    <div id="secretPreview" style="display:none;width:100%;background:rgba(255,50,50,0.06);border:1px solid rgba(255,68,68,0.3);border-radius:6px;padding:12px;margin-top:8px;">
+      <div style="color:#ff4444;font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:2px;margin-bottom:10px;">⚠ PARTY ใหม่</div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <div class="secret-char-preview">
+          <div style="font-size:2rem;">💩</div>
+          <div style="color:#f5c842;font-size:0.7rem;font-family:'Cinzel',serif;">เก</div>
+          <div style="color:var(--text2);font-size:0.55rem;">อาวุธ: ก้อนอึ</div>
+        </div>
+        <div class="secret-char-preview">
+          <div style="font-size:2rem;">🦆</div>
+          <div style="color:#4facfe;font-size:0.7rem;font-family:'Cinzel',serif;">เจ้าเป็ด</div>
+          <div style="color:var(--text2);font-size:0.55rem;">ทิ้งบอมบ์อึ</div>
+        </div>
+        <div class="secret-char-preview">
+          <div style="font-size:2rem;">🐓</div>
+          <div style="color:#2ecc71;font-size:0.7rem;font-family:'Cinzel',serif;">เจ้าไก่</div>
+          <div style="color:var(--text2);font-size:0.55rem;">จิก+Stun</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="width:100%;height:1px;background:rgba(245,200,66,0.15);margin:18px 0;"></div>
+    <button class="pause-btn" onclick="showScreen('menu')" style="margin-top:0;">← กลับเมนู</button>
+  </div>
+</div>
 <script>
 // ===== FIREBASE CONFIG =====
 const FB_URL = 'https://the-herta-cf467-default-rtdb.asia-southeast1.firebasedatabase.app';
@@ -475,6 +555,75 @@ async function fbPush(path,data){try{const r=await fetch(`${FB_URL}/${path}.json
 async function fbUpdate(path,data){try{await fetch(`${FB_URL}/${path}.json`,{method:'PATCH',body:JSON.stringify(data)});}catch{}}
 async function fbDelete(path){try{await fetch(`${FB_URL}/${path}.json`,{method:'DELETE'});}catch{}}
 let fbPollTimer=null;
+
+// ===== SETTINGS STATE =====
+let sfxMuted=false;
+let gfxQuality=2; // 0=low,1=med,2=high
+let fovOptions=[55,70,85,100];
+let fovIndex=1;
+let isSecretMode=false;
+
+function toggleSFX(){sfxMuted=!sfxMuted;}
+function cycleGfx(){gfxQuality=(gfxQuality+1)%3;}
+function cycleFOV(){fovIndex=(fovIndex+1)%fovOptions.length;FOV=fovOptions[fovIndex]*Math.PI/180;}
+function toggleSecretMode(on){
+  isSecretMode=on;
+  document.getElementById('secretPreview').style.display=on?'block':'none';
+  if(on)showNotif('🔴 โหมดลับเปิดแล้ว! เก + เจ้าเป็ด + เจ้าไก่ พร้อม!',3000);
+}
+function updateSettingsUI(){
+  document.getElementById('musicToggle').textContent=muted?'ปิด':'เปิด';
+  document.getElementById('musicToggle').className='setting-toggle'+(muted?' off':'');
+  document.getElementById('sfxToggle').textContent=sfxMuted?'ปิด':'เปิด';
+  document.getElementById('sfxToggle').className='setting-toggle'+(sfxMuted?' off':'');
+  const gfxNames=['ต่ำ','กลาง','สูง'];
+  document.getElementById('gfxToggle').textContent=gfxNames[gfxQuality];
+  document.getElementById('fovToggle').textContent=fovOptions[fovIndex]+'°';
+}
+
+// ===== SECRET MODE COMPANIONS =====
+let duckPet={x:0,y:0,angle:0,altitude:0,bombTimer:0,active:false};
+let chickenPet={x:0,y:0,angle:0,active:false,cluckTimer:0};
+
+function updateSecretPets(dt){
+  if(!isSecretMode)return;
+  // Duck follows player at altitude, bombs enemies
+  duckPet.x=player.x+Math.cos(player.angle+Math.PI)*CELL*2;
+  duckPet.y=player.y+Math.sin(player.angle+Math.PI)*CELL*2;
+  duckPet.altitude=CELL*3+Math.sin(Date.now()*0.002)*CELL*0.5;
+  duckPet.bombTimer-=dt;
+  if(duckPet.bombTimer<=0){
+    duckPet.bombTimer=4+Math.random()*3;
+    // Bomb nearest enemy
+    const tgt=enemies.filter(e=>!e.dead).sort((a,b)=>
+      Math.hypot(a.x-player.x,a.y-player.y)-Math.hypot(b.x-player.x,b.y-player.y))[0];
+    if(tgt&&Math.hypot(tgt.x-player.x,tgt.y-player.y)<CELL*10){
+      tgt.hp-=40;spawnParticles(tgt.x,tgt.y,'#8B4513',12);
+      showNotif('🦆💩 เจ้าเป็ดทิ้งบอมบ์! -40 HP');
+      playSFX('hit');if(tgt.hp<=0)killEnemy(tgt);
+    }
+  }
+  // Chicken orbits player, stuns nearby enemies
+  const cAngle=Date.now()*0.0015;
+  chickenPet.x=player.x+Math.cos(cAngle)*CELL*2.5;
+  chickenPet.y=player.y+Math.sin(cAngle)*CELL*2.5;
+  chickenPet.cluckTimer-=dt;
+  if(chickenPet.cluckTimer<=0){
+    chickenPet.cluckTimer=5+Math.random()*4;
+    // Stun nearby enemies
+    let stunned=0;
+    enemies.filter(e=>!e.dead).forEach(e=>{
+      if(Math.hypot(e.x-chickenPet.x,e.y-chickenPet.y)<CELL*4){
+        e.stunned=true;e.stunTimer=2.5;stunned++;
+        spawnParticles(e.x,e.y,'#f5c842',8);
+      }
+    });
+    if(stunned>0){showNotif(`🐓 เจ้าไก่ร้อง! Stun ${stunned} ตัว!`);playSFX('slash');}
+  }
+}
+
+// Apply stun in enemy update
+function isStunned(e){return e.stunned&&e.stunTimer>0;}
 
 // ===== AUDIO =====
 const AC=new (window.AudioContext||window.webkitAudioContext)();
@@ -548,19 +697,64 @@ const SKILLS={
   farmer:[{key:'Q',icon:'🌿',name:'Heal',cd:5000},{key:'E',icon:'🌾',name:'Poison',cd:7000},{key:'R',icon:'🍄',name:'Spore',cd:10000},{key:'F',icon:'🌱',name:'Regrow',cd:15000}]
 };
 
+// ===== WEAPON STATS (equipped weapon boosts damage) =====
+const WEAPON_STATS={
+  // Gunner weapons
+  pistol_basic:    {name:'Basic Pistol',   icon:'🔫',cls:'gunner',rarity:'common',   dmgBonus:0,  desc:'อาวุธเริ่มต้น'},
+  rifle_assault:   {name:'Assault Rifle',  icon:'🪖',cls:'gunner',rarity:'uncommon', dmgBonus:15, desc:'+15 ดาเมจ ยิงได้ไกลขึ้น'},
+  sniper_shadow:   {name:'Shadow Sniper',  icon:'🎯',cls:'gunner',rarity:'rare',     dmgBonus:30, desc:'+30 ดาเมจ Snipe'},
+  cannon_chaos:    {name:'Chaos Cannon',   icon:'💥',cls:'gunner',rarity:'legendary', dmgBonus:50, desc:'+50 ดาเมจ ทุกทาง'},
+  // Swordsman weapons
+  sword_iron:      {name:'Iron Sword',     icon:'⚔️',cls:'swordsman',rarity:'common',   dmgBonus:0,  desc:'อาวุธเริ่มต้น'},
+  sword_flame:     {name:'Flame Sword',    icon:'🔥',cls:'swordsman',rarity:'uncommon', dmgBonus:20, desc:'+20 ดาเมจ มีเปลวไฟ'},
+  sword_shadow:    {name:'Shadow Blade',   icon:'🗡️',cls:'swordsman',rarity:'rare',     dmgBonus:35, desc:'+35 ดาเมจ'},
+  dragon_fang:     {name:"Dragon's Fang",  icon:'🐉',cls:'swordsman',rarity:'legendary', dmgBonus:60, desc:'+60 ดาเมจ'},
+  // Farmer weapons
+  hoe_wood:        {name:'Wooden Hoe',     icon:'🌿',cls:'farmer',rarity:'common',   dmgBonus:0,  desc:'อาวุธเริ่มต้น'},
+  scythe_iron:     {name:'Iron Scythe',    icon:'☘️',cls:'farmer',rarity:'uncommon', dmgBonus:18, desc:'+18 ดาเมจ'},
+  staff_nature:    {name:'Nature Staff',   icon:'🪄',cls:'farmer',rarity:'rare',     dmgBonus:28, desc:'+28 ดาเมจ + ฮีลเพิ่ม'},
+  elder_bloom:     {name:'Elder Bloom',    icon:'🌸',cls:'farmer',rarity:'legendary', dmgBonus:45, desc:'+45 ดาเมจ + ฮีล AOE'},
+};
+
+// Armor stats
+const ARMOR_STATS={
+  armor_leather: {name:'Leather Armor', icon:'🛡️',rarity:'uncommon', defBonus:5,  maxHpBonus:20,  desc:'+5 DEF, +20 MaxHP'},
+  armor_chain:   {name:'Chain Mail',    icon:'🔩',rarity:'rare',     defBonus:12, maxHpBonus:40,  desc:'+12 DEF, +40 MaxHP'},
+  armor_plate:   {name:'Plate Armor',   icon:'🏰',rarity:'epic',     defBonus:20, maxHpBonus:70,  desc:'+20 DEF, +70 MaxHP'},
+  armor_void:    {name:'Void Armor',    icon:'🌑',rarity:'legendary', defBonus:30, maxHpBonus:100, desc:'+30 DEF, +100 MaxHP'},
+};
+
+// Equipped slots
+let equippedWeapon=null; // weapon id
+let equippedArmor=null;  // armor id
+let weaponDmgBonus=0;
+let armorDefBonus=0;
+
+function getWeaponBonus(){return equippedWeapon&&WEAPON_STATS[equippedWeapon]?WEAPON_STATS[equippedWeapon].dmgBonus:0;}
+function getArmorBonus(){return equippedArmor&&ARMOR_STATS[equippedArmor]?ARMOR_STATS[equippedArmor].defBonus:0;}
+
 const ITEMS=[
-  {id:'hp_pot',name:'HP Potion',icon:'🧪',rarity:'common',qty:3,use:()=>heal(30)},
-  {id:'mp_pot',name:'MP Potion',icon:'💧',rarity:'common',qty:2,use:()=>{mp=Math.min(maxMp,mp+30);updateBars();}},
-  {id:'sword_iron',name:'Iron Sword',icon:'⚔️',rarity:'uncommon',qty:1,equip:true},
-  {id:'armor_leather',name:'Leather Armor',icon:'🛡️',rarity:'rare',qty:1,equip:true},
-  {id:'amulet',name:'Shadow Amulet',icon:'📿',rarity:'epic',qty:1,equip:true},
-  {id:'dragon_fang',name:"Dragon's Fang",icon:'🗡️',rarity:'legendary',qty:1,equip:true},
+  {id:'hp_pot',   name:'HP Potion',     icon:'🧪', rarity:'common',   qty:3, type:'consumable', use:()=>{heal(30);showNotif('🧪 +30 HP!');}},
+  {id:'mp_pot',   name:'MP Potion',     icon:'💧', rarity:'common',   qty:2, type:'consumable', use:()=>{mp=Math.min(maxMp,mp+30);updateBars();showNotif('💧 +30 MP!');}},
+  {id:'hp_pot_l', name:'HP Potion (L)', icon:'❤️', rarity:'uncommon', qty:1, type:'consumable', use:()=>{heal(80);showNotif('❤️ +80 HP!');}},
+  {id:'elixir',   name:'Elixir',        icon:'✨', rarity:'epic',     qty:1, type:'consumable', use:()=>{heal(maxHp);mp=maxMp;updateBars();showNotif('✨ ฮีลเต็ม!');}},
 ];
-const DROPS=[
-  {id:'gold_coin',name:'Gold',icon:'🪙',rarity:'common',qty:0},
-  {id:'crystal',name:'Crystal',icon:'💎',rarity:'uncommon',qty:1},
-  {id:'scroll',name:'Magic Scroll',icon:'📜',rarity:'rare',qty:1},
-];
+
+// Drop tables per class (weapon + armor) - set at game start
+let DROPS=[];
+function buildDropTable(){
+  const clsWeapons=Object.entries(WEAPON_STATS).filter(([k,v])=>v.cls===playerClass&&v.rarity!=='common');
+  const weaponDrops=clsWeapons.map(([id,v])=>({id,name:v.name,icon:v.icon,rarity:v.rarity,qty:1,type:'weapon',desc:v.desc}));
+  const armorDrops=Object.entries(ARMOR_STATS).map(([id,v])=>({id,name:v.name,icon:v.icon,rarity:v.rarity,qty:1,type:'armor',desc:v.desc}));
+  const consumables=[
+    {id:'gold_coin',name:'Gold',       icon:'🪙',rarity:'common',  qty:0,type:'gold'},
+    {id:'crystal', name:'Crystal',     icon:'💎',rarity:'uncommon',qty:1,type:'material'},
+    {id:'hp_pot',  name:'HP Potion',   icon:'🧪',rarity:'common',  qty:1,type:'consumable',use:()=>{heal(30);showNotif('🧪 +30 HP!');}},
+    {id:'mp_pot',  name:'MP Potion',   icon:'💧',rarity:'common',  qty:1,type:'consumable',use:()=>{mp=Math.min(maxMp,mp+30);updateBars();showNotif('💧 +30 MP!');}},
+    {id:'hp_pot_l',name:'HP Potion(L)',icon:'❤️',rarity:'uncommon',qty:1,type:'consumable',use:()=>{heal(80);showNotif('❤️ +80 HP!');}},
+  ];
+  DROPS=[...consumables,...weaponDrops,...armorDrops];
+}
 
 // ===== SCREENS =====
 function showScreen(id){
@@ -717,9 +911,19 @@ function spawnParticles(x,y,color,n=8){
   }
 }
 function spawnDrop(x,y){
-  if(Math.random()>0.35)return;
-  const d=DROPS[Math.floor(Math.random()*DROPS.length)];
-  drops.push({...JSON.parse(JSON.stringify(d)),x,y,id:'drop'+Date.now()+Math.random(),qty:1+Math.floor(Math.random()*5)});
+  if(Math.random()>0.4)return;
+  // Weighted rarity: common 55%, uncommon 28%, rare 12%, epic 4%, legendary 1%
+  const rarityRoll=Math.random();
+  let rarity='common';
+  if(rarityRoll>0.99)rarity='legendary';
+  else if(rarityRoll>0.95)rarity='epic';
+  else if(rarityRoll>0.83)rarity='rare';
+  else if(rarityRoll>0.55)rarity='uncommon';
+  const pool=DROPS.filter(d=>d.rarity===rarity);
+  if(!pool.length)return;
+  const d=pool[Math.floor(Math.random()*pool.length)];
+  const qty=d.id==='gold_coin'?5+Math.floor(Math.random()*20):1;
+  drops.push({...JSON.parse(JSON.stringify(d)),x,y,id:d.id,qty,dropId:'drop'+Date.now()+Math.random()});
 }
 
 // Raycaster
@@ -812,6 +1016,11 @@ function drawWorld(){
     Object.values(otherPlayers).forEach(p=>{
       sprites.push({x:p.x,y:p.y,type:'player',name:p.name||'?',cls:p.cls||'gunner',hp:p.hp||100,maxHp:100,size:1,hitFlash:0});
     });
+  }
+  // Secret mode pets
+  if(isSecretMode){
+    sprites.push({x:duckPet.x,y:duckPet.y,type:'duck',name:'เจ้าเป็ด',size:0.7,hitFlash:0,hp:999,maxHp:999});
+    sprites.push({x:chickenPet.x,y:chickenPet.y,type:'chicken',name:'เจ้าไก่',size:0.7,hitFlash:0,hp:999,maxHp:999});
   }
 
   // Sort by distance (far to near)
@@ -1093,8 +1302,65 @@ function drawWorld(){
       ctx.beginPath();ctx.roundRect(bBarX,top-sz*0.18,bBarW*bossHpPct,sz*0.07,3);ctx.fill();
       ctx.shadowBlur=0;
 
+    }else if(sp.type==='duck'){
+      // 🦆 เจ้าเป็ด flying
+      const floatY=top+sz*0.4+Math.sin(Date.now()*0.004)*sz*0.08;
+      const wingFlap=Math.sin(Date.now()*0.015)*0.3;
+      ctx.save();ctx.translate(screenX,floatY);
+      // Wings
+      ctx.fillStyle='#f5c842';
+      ctx.beginPath();ctx.ellipse(-sz*0.25,-sz*0.05,sz*0.22,sz*0.07,wingFlap,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.ellipse(sz*0.25,-sz*0.05,sz*0.22,sz*0.07,-wingFlap,0,Math.PI*2);ctx.fill();
+      // Body
+      const duckGrad=ctx.createRadialGradient(0,0,0,0,0,sz*0.22);
+      duckGrad.addColorStop(0,'#ffe066');duckGrad.addColorStop(1,'#e6ac00');
+      ctx.fillStyle=duckGrad;ctx.beginPath();ctx.ellipse(0,0,sz*0.2,sz*0.16,0,0,Math.PI*2);ctx.fill();
+      // Head
+      ctx.fillStyle='#2ecc71';ctx.beginPath();ctx.arc(sz*0.14,-sz*0.12,sz*0.09,0,Math.PI*2);ctx.fill();
+      // Eye
+      ctx.fillStyle='#000';ctx.beginPath();ctx.arc(sz*0.18,-sz*0.14,sz*0.025,0,Math.PI*2);ctx.fill();
+      // Bill
+      ctx.fillStyle='#e67e22';ctx.beginPath();ctx.moveTo(sz*0.22,-sz*0.1);ctx.lineTo(sz*0.3,-sz*0.11);ctx.lineTo(sz*0.22,-sz*0.08);ctx.fill();
+      // Name
+      ctx.font=`bold ${Math.max(7,sz*0.1)}px 'Cinzel',serif`;
+      ctx.textAlign='center';ctx.fillStyle='#4facfe';ctx.shadowColor='#4facfe';ctx.shadowBlur=4;
+      ctx.fillText('🦆 เจ้าเป็ด',0,-sz*0.3);ctx.shadowBlur=0;
+      ctx.restore();
+
+    }else if(sp.type==='chicken'){
+      // 🐓 เจ้าไก่ running
+      const bobC=Math.sin(Date.now()*0.012)*sz*0.04;
+      ctx.save();ctx.translate(screenX,top+sz*0.5+bobC);
+      // Body
+      const ckGrad=ctx.createRadialGradient(0,0,0,0,0,sz*0.2);
+      ckGrad.addColorStop(0,'#f39c12');ckGrad.addColorStop(1,'#c0392b');
+      ctx.fillStyle=ckGrad;ctx.beginPath();ctx.ellipse(0,0,sz*0.18,sz*0.15,0,0,Math.PI*2);ctx.fill();
+      // Head
+      ctx.fillStyle='#e74c3c';ctx.beginPath();ctx.arc(sz*0.16,-sz*0.12,sz*0.09,0,Math.PI*2);ctx.fill();
+      // Comb
+      ctx.fillStyle='#c0392b';
+      for(let ci=0;ci<3;ci++){ctx.beginPath();ctx.arc(sz*0.12-ci*sz*0.04,-sz*0.22+ci*sz*0.01,sz*0.03,0,Math.PI*2);ctx.fill();}
+      // Eye
+      ctx.fillStyle='#000';ctx.beginPath();ctx.arc(sz*0.2,-sz*0.13,sz*0.025,0,Math.PI*2);ctx.fill();
+      // Beak
+      ctx.fillStyle='#f39c12';ctx.beginPath();ctx.moveTo(sz*0.25,-sz*0.1);ctx.lineTo(sz*0.32,-sz*0.12);ctx.lineTo(sz*0.25,-sz*0.07);ctx.fill();
+      // Legs
+      const legA=Math.sin(Date.now()*0.015)*0.25;
+      ctx.strokeStyle='#f39c12';ctx.lineWidth=sz*0.025;
+      ctx.beginPath();ctx.moveTo(-sz*0.05,sz*0.12);ctx.lineTo(-sz*0.08+legA*sz*0.1,sz*0.25);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(sz*0.05,sz*0.12);ctx.lineTo(sz*0.08-legA*sz*0.1,sz*0.25);ctx.stroke();
+      // Stun stars if nearby stunned enemy
+      if(Date.now()%2000<200){
+        ctx.font=`${Math.max(6,sz*0.1)}px serif`;ctx.textAlign='center';
+        ctx.fillText('⭐',sz*0.28,-sz*0.28);
+      }
+      // Name
+      ctx.font=`bold ${Math.max(7,sz*0.1)}px 'Cinzel',serif`;
+      ctx.textAlign='center';ctx.fillStyle='#2ecc71';ctx.shadowColor='#2ecc71';ctx.shadowBlur=4;
+      ctx.fillText('🐓 เจ้าไก่',0,-sz*0.32);ctx.shadowBlur=0;
+      ctx.restore();
+
     }else{
-      // ===== ENEMY - AAA character =====
       const etype=sp.name||'Shadow Ghoul';
       const ecol=sp.color||'#8e44ad';
       const bw3=Math.max(5,sz*0.38),bh3=sz*0.48;
@@ -1231,127 +1497,183 @@ function drawWeapon(W,H){
   const attackAnim=Date.now()<attackCooldown?(attackCooldown-Date.now()):0;
   const swingT=attackAnim>0?Math.min(1,attackAnim/600):0;
   ctx.save();
+
+  // ===== SECRET MODE: ก้อนอึ =====
+  if(isSecretMode){
+    const poopBob=Math.sin(Date.now()*0.003)*3;
+    ctx.save();ctx.translate(cx+W*0.1,cy+poopBob-swingT*H*0.06);
+    if(swingT>0){ctx.rotate(-0.3+swingT*0.8);}
+    // Poop shadow
+    ctx.fillStyle='rgba(0,0,0,0.2)';ctx.beginPath();ctx.ellipse(4,H*0.06,H*0.075,H*0.015,0,0,Math.PI*2);ctx.fill();
+    // Poop layers
+    const poopColors=['#5C3317','#7B4A1E','#8B5E2A'];
+    [[0,0,H*0.065,H*0.055],[0,-H*0.055,H*0.05,H*0.045],[-H*0.008,-H*0.1,H*0.038,H*0.035]].forEach(([ox,oy,rx,ry],i)=>{
+      const pg=ctx.createRadialGradient(ox-rx*0.2,oy-ry*0.3,0,ox,oy,Math.max(rx,ry));
+      pg.addColorStop(0,poopColors[i]+'ff');pg.addColorStop(1,poopColors[i]+'88');
+      ctx.fillStyle=pg;ctx.beginPath();ctx.ellipse(ox,oy,rx,ry,0,0,Math.PI*2);ctx.fill();
+    });
+    // Shine
+    ctx.fillStyle='rgba(255,255,255,0.15)';ctx.beginPath();ctx.ellipse(-H*0.02,-H*0.09,H*0.015,H*0.01,-0.3,0,Math.PI*2);ctx.fill();
+    // Flies orbiting
+    for(let fi=0;fi<2;fi++){
+      const fa=Date.now()*0.004+fi*Math.PI;
+      ctx.fillStyle='#222';ctx.beginPath();ctx.arc(Math.cos(fa)*H*0.07,Math.sin(fa)*H*0.05-H*0.04,H*0.008,0,Math.PI*2);ctx.fill();
+    }
+    // Smell lines
+    ctx.strokeStyle='rgba(139,90,43,0.4)';ctx.lineWidth=1;
+    for(let si=0;si<3;si++){
+      const sx2=(-H*0.04)+si*H*0.04;
+      ctx.beginPath();ctx.moveTo(sx2,-H*0.12);ctx.quadraticCurveTo(sx2+H*0.02,-H*0.17,sx2,-H*0.22);ctx.stroke();
+    }
+    if(swingT>0){
+      ctx.font=`${H*0.12}px serif`;ctx.textAlign='center';ctx.globalAlpha*=swingT;
+      ctx.fillText('💥',H*0.1,-H*0.15);ctx.globalAlpha=bright||1;
+    }
+    ctx.restore();ctx.restore();return;
+  }
+
+  // ===== NORMAL WEAPONS =====
+  const wid=equippedWeapon||{gunner:'pistol_basic',swordsman:'sword_iron',farmer:'hoe_wood'}[playerClass];
+
   if(playerClass==='gunner'){
-    const gw=W*0.24,gh=H*0.19;
+    // Determine gun style from weapon
+    const isSniper=wid==='sniper_shadow';
+    const isCannon=wid==='cannon_chaos';
+    const isRifle=wid==='rifle_assault';
+    const gw=W*(isCannon?0.3:isSniper?0.28:0.24),gh=H*(isCannon?0.22:isSniper?0.16:0.19);
     const gx=cx+W*0.04,gy=cy-gh*0.1+swingT*gh*0.12;
     const recoil=swingT*W*0.015;
-    // Gun shadow
-    ctx.fillStyle='rgba(0,0,0,0.25)';
-    ctx.beginPath();ctx.roundRect(gx-gw/2+6,gy+6,gw*0.75,gh*0.35,3);ctx.fill();
+    const gunCol=isCannon?'#8B0000':isSniper?'#1a3a1a':isRifle?'#2c3e50':'#2c3e50';
+    const accentCol=isCannon?'#e74c3c':isSniper?'#2ecc71':isRifle?'#9b59b6':'#4facfe';
+    // Shadow
+    ctx.fillStyle='rgba(0,0,0,0.25)';ctx.beginPath();ctx.roundRect(gx-gw/2+6,gy+6,gw*0.75,gh*0.35,3);ctx.fill();
     // Barrel
-    const barrelGrad=ctx.createLinearGradient(gx-gw/2-20-recoil,gy,gx-gw/2-20+gw*0.38-recoil,gy+gh*0.12);
-    barrelGrad.addColorStop(0,'#1a2535');barrelGrad.addColorStop(0.5,'#3a4f6a');barrelGrad.addColorStop(1,'#1a2535');
-    ctx.fillStyle=barrelGrad;ctx.beginPath();ctx.roundRect(gx-gw/2-22-recoil,gy+gh*0.01,gw*0.38+recoil,gh*0.13,2);ctx.fill();
+    const barrelLen=isSniper?gw*0.55:isCannon?gw*0.3:gw*0.38;
+    const barrelGrad=ctx.createLinearGradient(gx-gw/2-20-recoil,gy,gx-gw/2+barrelLen-recoil,gy+gh*0.12);
+    barrelGrad.addColorStop(0,gunCol);barrelGrad.addColorStop(0.5,'#4a5a6a');barrelGrad.addColorStop(1,gunCol);
+    ctx.fillStyle=barrelGrad;ctx.beginPath();ctx.roundRect(gx-gw/2-22-recoil,gy+gh*0.01,barrelLen+recoil,isCannon?gh*0.18:gh*0.13,isCannon?4:2);ctx.fill();
+    if(isCannon){
+      // Cannon mouth
+      ctx.fillStyle=accentCol+'44';ctx.beginPath();ctx.arc(gx-gw/2-22-recoil,gy+gh*0.1,gh*0.2,0,Math.PI*2);ctx.fill();
+    }
     // Muzzle flash
     if(swingT>0.8){
-      ctx.fillStyle='rgba(255,220,60,'+swingT*0.9+')';
-      ctx.beginPath();ctx.arc(gx-gw/2-22-recoil,gy+gh*0.07,gh*0.13,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='rgba(255,120,20,'+swingT*0.6+')';
-      ctx.beginPath();ctx.arc(gx-gw/2-22-recoil,gy+gh*0.07,gh*0.06,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='rgba(255,220,60,'+swingT*0.9+')';ctx.beginPath();ctx.arc(gx-gw/2-22-recoil,gy+gh*0.07,gh*0.13,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='rgba(255,120,20,'+swingT*0.6+')';ctx.beginPath();ctx.arc(gx-gw/2-22-recoil,gy+gh*0.07,gh*0.06,0,Math.PI*2);ctx.fill();
     }
     // Gun body
     const gGrad=ctx.createLinearGradient(gx-gw/2,gy,gx+gw/2,gy+gh);
-    gGrad.addColorStop(0,'#2c3e50');gGrad.addColorStop(0.3,'#3d5166');gGrad.addColorStop(1,'#1a252f');
-    ctx.fillStyle=gGrad;
-    ctx.beginPath();ctx.roundRect(gx-gw*0.08,gy-gh*0.12,gw*0.09,gh*1.1,4);ctx.fill();
+    gGrad.addColorStop(0,gunCol==='#2c3e50'?'#2c3e50':gunCol);gGrad.addColorStop(0.3,'#3d5166');gGrad.addColorStop(1,'#1a252f');
+    ctx.fillStyle=gGrad;ctx.beginPath();ctx.roundRect(gx-gw*0.08,gy-gh*0.12,gw*0.09,gh*1.1,4);ctx.fill();
     ctx.fillStyle='#34495e';ctx.beginPath();ctx.roundRect(gx-gw/2,gy,gw*0.72,gh*0.38,3);ctx.fill();
-    // Blue accent stripe
-    ctx.fillStyle='#4facfe';ctx.fillRect(gx-gw/2-4,gy+gh*0.04,4,gh*0.22);
-    ctx.fillStyle='rgba(79,172,254,0.4)';ctx.fillRect(gx-gw/2,gy,gw*0.72,gh*0.06);
+    ctx.fillStyle=accentCol;ctx.fillRect(gx-gw/2-4,gy+gh*0.04,4,gh*0.22);
+    ctx.fillStyle=accentCol+'44';ctx.fillRect(gx-gw/2,gy,gw*0.72,gh*0.06);
+    if(isSniper){
+      // Long scope
+      ctx.fillStyle='#1a3a1a';ctx.beginPath();ctx.roundRect(gx-gw*0.15,gy-gh*0.18,gw*0.5,gh*0.2,3);ctx.fill();
+      ctx.fillStyle=accentCol+'55';ctx.beginPath();ctx.arc(gx+gw*0.1,gy-gh*0.08,gh*0.07,0,Math.PI*2);ctx.fill();
+    }else{
+      ctx.fillStyle='#2c3e50';ctx.beginPath();ctx.roundRect(gx-gw*0.15,gy-gh*0.12,gw*0.35,gh*0.15,3);ctx.fill();
+      ctx.fillStyle=accentCol+'33';ctx.beginPath();ctx.arc(gx,gy-gh*0.05,gh*0.06,0,Math.PI*2);ctx.fill();
+    }
     // Grip
     const gripG=ctx.createLinearGradient(gx-gw*0.3,gy+gh*0.38,gx-gw*0.1,gy+gh*0.65);
     gripG.addColorStop(0,'#1a252f');gripG.addColorStop(1,'#0d1820');
     ctx.fillStyle=gripG;ctx.beginPath();ctx.roundRect(gx-gw*0.3,gy+gh*0.38,gw*0.42,gh*0.27,4);ctx.fill();
-    // Scope
-    ctx.fillStyle='#2c3e50';ctx.beginPath();ctx.roundRect(gx-gw*0.15,gy-gh*0.12,gw*0.35,gh*0.15,3);ctx.fill();
-    ctx.fillStyle='#4facfe33';ctx.beginPath();ctx.arc(gx,gy-gh*0.05,gh*0.06,0,Math.PI*2);ctx.fill();
-    // Edge highlight
-    ctx.strokeStyle='rgba(79,172,254,0.25)';ctx.lineWidth=1.5;
+    ctx.strokeStyle=accentCol+'25';ctx.lineWidth=1.5;
     ctx.beginPath();ctx.roundRect(gx-gw/2,gy,gw*0.7,gh*0.35,3);ctx.stroke();
 
   }else if(playerClass==='swordsman'){
+    // Sword style based on weapon
+    const isDragon=wid==='dragon_fang';
+    const isShadow=wid==='sword_shadow';
+    const isFlame=wid==='sword_flame';
     const swingAngle=-0.4+swingT*1.2;
+    const swordCol=isDragon?'#ff6600':isShadow?'#9b59b6':isFlame?'#e74c3c':'#bdc3c7';
+    const swordGlow=isDragon?'#ff8800':isShadow?'#8e44ad':isFlame?'#ff4500':'rgba(245,200,66,0.8)';
     ctx.save();ctx.translate(cx+W*0.08,cy-H*0.04);ctx.rotate(swingAngle);
-    // Glow aura when attacking
-    if(swingT>0){
-      ctx.shadowColor='rgba(245,200,66,0.8)';ctx.shadowBlur=20*swingT;
-      ctx.strokeStyle=`rgba(245,200,66,${swingT*0.4})`;ctx.lineWidth=sz2=>sz2;
-      ctx.beginPath();ctx.arc(0,0,H*0.2,Math.PI*0.8,Math.PI*1.2);ctx.stroke();
-      ctx.shadowBlur=0;
-    }
-    // Blade
-    const sg=ctx.createLinearGradient(-8,0,8,H*0.36);
-    sg.addColorStop(0,'#d0d8e0');sg.addColorStop(0.3,'#ecf0f1');sg.addColorStop(0.7,'#bdc3c7');sg.addColorStop(1,'#95a5a6');
-    ctx.fillStyle=sg;
-    ctx.beginPath();ctx.moveTo(0,-H*0.06);ctx.lineTo(9,H*0.36);ctx.lineTo(-9,H*0.36);ctx.closePath();ctx.fill();
-    // Blood groove
-    ctx.strokeStyle='rgba(120,130,140,0.6)';ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.moveTo(0,-H*0.04);ctx.lineTo(1,H*0.3);ctx.stroke();
-    // Shiny edge
-    ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(-1,-H*0.05);ctx.lineTo(9,H*0.36);ctx.stroke();
-    // Gold edge glow
-    ctx.strokeStyle='rgba(245,200,66,'+(0.5+swingT*0.5)+')';ctx.lineWidth=2;ctx.shadowColor='#f5c842';ctx.shadowBlur=8+swingT*12;
-    ctx.beginPath();ctx.moveTo(-1,-H*0.05);ctx.lineTo(-8,H*0.35);ctx.stroke();ctx.shadowBlur=0;
-    // Guard
-    const guardG=ctx.createLinearGradient(-18,H*0.3,18,H*0.38);
-    guardG.addColorStop(0,'#c8a000');guardG.addColorStop(0.5,'#f5c842');guardG.addColorStop(1,'#c8a000');
-    ctx.fillStyle=guardG;ctx.beginPath();ctx.roundRect(-18,H*0.3,36,9,3);ctx.fill();
-    ctx.strokeStyle='#ffd700';ctx.lineWidth=1;ctx.stroke();
-    // Gem on guard
-    ctx.fillStyle='#e74c3c';ctx.beginPath();ctx.arc(0,H*0.34,4,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='rgba(255,180,180,0.6)';ctx.beginPath();ctx.arc(-1,H*0.33,2,0,Math.PI*2);ctx.fill();
-    // Handle
-    const hg=ctx.createLinearGradient(-6,H*0.37,6,H*0.48);
-    hg.addColorStop(0,'#8B6340');hg.addColorStop(0.5,'#7f5539');hg.addColorStop(1,'#4a3728');
-    ctx.fillStyle=hg;ctx.beginPath();ctx.roundRect(-6,H*0.37,12,H*0.13,3);ctx.fill();
-    // Wrap lines
-    ctx.strokeStyle='rgba(60,40,20,0.5)';ctx.lineWidth=2;
-    for(let wi=0;wi<4;wi++){const wy=H*0.39+wi*H*0.025;ctx.beginPath();ctx.moveTo(-6,wy);ctx.lineTo(6,wy);ctx.stroke();}
-    // Pommel
-    const pomG=ctx.createRadialGradient(0,H*0.5,0,0,H*0.5,7);
-    pomG.addColorStop(0,'#f5c842');pomG.addColorStop(1,'#8B6340');
-    ctx.fillStyle=pomG;ctx.beginPath();ctx.arc(0,H*0.5,7,0,Math.PI*2);ctx.fill();
+    // Dual sword if dragon_fang
+    const drawBlade=(offX=0,offY=0,scale=1)=>{
+      ctx.save();ctx.translate(offX,offY);ctx.scale(scale,scale);
+      if(swingT>0){ctx.shadowColor=swordGlow;ctx.shadowBlur=20*swingT;}
+      const sg=ctx.createLinearGradient(-8,0,8,H*0.36);
+      sg.addColorStop(0,'#d0d8e0');sg.addColorStop(0.3,isFlame?'#ff8866':isShadow?'#cc88ff':isDragon?'#ffaa44':'#ecf0f1');
+      sg.addColorStop(0.7,'#bdc3c7');sg.addColorStop(1,'#95a5a6');
+      ctx.fillStyle=sg;ctx.beginPath();ctx.moveTo(0,-H*0.06);ctx.lineTo(isDragon?11:9,H*0.36);ctx.lineTo(isDragon?-11:-9,H*0.36);ctx.closePath();ctx.fill();
+      if(isFlame&&swingT>0){
+        for(let fi=0;fi<4;fi++){
+          const fy=-H*0.02+fi*H*0.08;
+          ctx.fillStyle=`rgba(255,${100+fi*30},0,${swingT*0.5})`;
+          ctx.beginPath();ctx.ellipse(Math.sin(fi+Date.now()*0.01)*4,fy,5,H*0.03,0.2,0,Math.PI*2);ctx.fill();
+        }
+      }
+      ctx.strokeStyle=swordGlow;ctx.lineWidth=2;ctx.shadowColor=swordGlow;ctx.shadowBlur=8+swingT*12;
+      ctx.beginPath();ctx.moveTo(-1,-H*0.05);ctx.lineTo(-8,H*0.35);ctx.stroke();ctx.shadowBlur=0;
+      const guardG=ctx.createLinearGradient(-18,H*0.3,18,H*0.38);
+      guardG.addColorStop(0,isDragon?'#cc4400':isShadow?'#6c3483':'#c8a000');
+      guardG.addColorStop(0.5,isDragon?'#ff6600':isShadow?'#9b59b6':'#f5c842');
+      guardG.addColorStop(1,isDragon?'#cc4400':isShadow?'#6c3483':'#c8a000');
+      ctx.fillStyle=guardG;ctx.beginPath();ctx.roundRect(-(isDragon?22:18),H*0.3,(isDragon?44:36),9,3);ctx.fill();
+      ctx.fillStyle=isDragon?'#ff8800':isShadow?'#e74c3c':'#e74c3c';
+      ctx.beginPath();ctx.arc(0,H*0.34,isDragon?5:4,0,Math.PI*2);ctx.fill();
+      const hg=ctx.createLinearGradient(-6,H*0.37,6,H*0.48);
+      hg.addColorStop(0,isDragon?'#3d1a00':'#8B6340');hg.addColorStop(1,isDragon?'#1a0a00':'#4a3728');
+      ctx.fillStyle=hg;ctx.beginPath();ctx.roundRect(-6,H*0.37,12,H*0.13,3);ctx.fill();
+      ctx.restore();
+    };
+    drawBlade(0,0,1);
+    if(isDragon)drawBlade(-20,-10,0.7);
     ctx.restore();
 
   }else{
-    // Farmer - Enhanced Scythe
+    // Farmer weapon style
+    const isElder=wid==='elder_bloom';
+    const isStaff=wid==='staff_nature';
+    const isScythe=wid==='scythe_iron';
+    const farmerCol=isElder?'#ff69b4':isStaff?'#9b59b6':isScythe?'#95a5a6':'#2ecc71';
     const swingAngle=-0.3+swingT*0.6;
     ctx.save();ctx.translate(cx+W*0.07,cy);ctx.rotate(swingAngle);
-    // Staff shadow
-    ctx.fillStyle='rgba(0,0,0,0.2)';ctx.fillRect(-2,-H*0.09,7,H*0.56);
-    // Staff
     const pg=ctx.createLinearGradient(-4,-H*0.1,4,H*0.47);
-    pg.addColorStop(0,'#8B6340');pg.addColorStop(0.3,'#6c4523');pg.addColorStop(0.7,'#5a3a1a');pg.addColorStop(1,'#3d2b17');
+    pg.addColorStop(0,isElder?'#4a1a4a':isStaff?'#2c1a4a':'#8B6340');
+    pg.addColorStop(1,isElder?'#1a0a1a':'#3d2b17');
     ctx.fillStyle=pg;ctx.beginPath();ctx.roundRect(-4,-H*0.1,8,H*0.57,2);ctx.fill();
-    // Staff wrap
-    ctx.strokeStyle='rgba(100,70,30,0.4)';ctx.lineWidth=2;
-    for(let wi=0;wi<6;wi++){const wy=-H*0.08+wi*H*0.08;ctx.beginPath();ctx.moveTo(-4,wy);ctx.lineTo(4,wy);ctx.stroke();}
-    // Blade
-    const bladeGrad=ctx.createLinearGradient(-20,-H*0.1,20,-H*0.06);
-    bladeGrad.addColorStop(0,'#1a4a1a');bladeGrad.addColorStop(0.3,'#2ecc71');bladeGrad.addColorStop(0.6,'#27ae60');bladeGrad.addColorStop(1,'#1a4a1a');
-    ctx.fillStyle=bladeGrad;
-    ctx.shadowColor='#2ecc71';ctx.shadowBlur=swingT*15+5;
-    ctx.beginPath();ctx.moveTo(-4,-H*0.1);ctx.bezierCurveTo(-20,-H*0.16,20,-H*0.18,18,-H*0.06);
-    ctx.bezierCurveTo(12,-H*0.04,-4,-H*0.07,-4,-H*0.1);ctx.fill();
-    // Blade edge highlight
-    ctx.strokeStyle='rgba(150,255,150,0.6)';ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.moveTo(-4,-H*0.1);ctx.bezierCurveTo(-20,-H*0.16,20,-H*0.18,18,-H*0.06);ctx.stroke();
-    ctx.shadowBlur=0;
-    // Glowing runes on staff
-    const runeAlpha=0.4+0.3*Math.sin(Date.now()*0.004);
-    ctx.strokeStyle=`rgba(46,204,113,${runeAlpha})`;ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(-3,H*0.1);ctx.lineTo(3,H*0.15);ctx.moveTo(3,H*0.1);ctx.lineTo(-3,H*0.15);ctx.stroke();
-    ctx.beginPath();ctx.arc(0,H*0.25,3,0,Math.PI*2);ctx.stroke();
-    // Leaf particles when using skill
-    if(swingT>0.5){
-      for(let li=0;li<4;li++){
-        const la=(Date.now()*0.008+li)*2;
-        const lx=Math.cos(la)*swingT*H*0.1,ly=Math.sin(la)*swingT*H*0.06;
-        ctx.fillStyle=`rgba(46,204,113,${swingT*0.6})`;
-        ctx.beginPath();ctx.ellipse(lx,ly-H*0.08,4,2,la,0,Math.PI*2);ctx.fill();
+    // Blade/head
+    if(isScythe){
+      // Iron scythe - metallic
+      const bladeGrad=ctx.createLinearGradient(-20,-H*0.1,20,-H*0.06);
+      bladeGrad.addColorStop(0,'#555');bladeGrad.addColorStop(0.5,'#aaa');bladeGrad.addColorStop(1,'#555');
+      ctx.fillStyle=bladeGrad;ctx.shadowColor='#aaa';ctx.shadowBlur=swingT*8+2;
+      ctx.beginPath();ctx.moveTo(-4,-H*0.1);ctx.bezierCurveTo(-22,-H*0.18,22,-H*0.2,18,-H*0.06);
+      ctx.bezierCurveTo(12,-H*0.04,-4,-H*0.07,-4,-H*0.1);ctx.fill();
+    }else if(isStaff||isElder){
+      // Orb on top
+      const orbCol=isElder?'#ff69b4':'#9b59b6';
+      const orbGrad=ctx.createRadialGradient(0,-H*0.13,0,0,-H*0.13,H*0.08);
+      orbGrad.addColorStop(0,orbCol+'ff');orbGrad.addColorStop(0.5,orbCol+'88');orbGrad.addColorStop(1,orbCol+'00');
+      ctx.fillStyle=orbGrad;ctx.shadowColor=orbCol;ctx.shadowBlur=swingT*20+8;
+      ctx.beginPath();ctx.arc(0,-H*0.13,H*0.07,0,Math.PI*2);ctx.fill();
+      ctx.shadowBlur=0;
+      if(isElder){
+        // Petals
+        for(let pi=0;pi<5;pi++){
+          const pa=pi/5*Math.PI*2+Date.now()*0.001;
+          ctx.fillStyle='#ff69b4aa';ctx.beginPath();
+          ctx.ellipse(Math.cos(pa)*H*0.08,-H*0.13+Math.sin(pa)*H*0.08,H*0.04,H*0.02,pa,0,Math.PI*2);ctx.fill();
+        }
       }
+    }else{
+      // Basic green blade
+      const bladeGrad=ctx.createLinearGradient(-20,-H*0.1,20,-H*0.06);
+      bladeGrad.addColorStop(0,'#1a4a1a');bladeGrad.addColorStop(0.3,'#2ecc71');bladeGrad.addColorStop(1,'#1a4a1a');
+      ctx.fillStyle=bladeGrad;ctx.shadowColor='#2ecc71';ctx.shadowBlur=swingT*15+5;
+      ctx.beginPath();ctx.moveTo(-4,-H*0.1);ctx.bezierCurveTo(-20,-H*0.16,20,-H*0.18,18,-H*0.06);
+      ctx.bezierCurveTo(12,-H*0.04,-4,-H*0.07,-4,-H*0.1);ctx.fill();
     }
+    ctx.shadowBlur=0;
+    // Runes
+    const runeAlpha=0.4+0.3*Math.sin(Date.now()*0.004);
+    ctx.strokeStyle=`rgba(${isElder?'255,105,180':isStaff?'155,89,182':'46,204,113'},${runeAlpha})`;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(-3,H*0.1);ctx.lineTo(3,H*0.15);ctx.moveTo(3,H*0.1);ctx.lineTo(-3,H*0.15);ctx.stroke();
     ctx.restore();
   }
   ctx.restore();
@@ -1501,17 +1823,18 @@ function showCooldown(idx,ms){
 let attackCooldown=0;
 function attack(){
   if(Date.now()<attackCooldown||paused)return;
-  if(playerClass==='gunner'){shoot();attackCooldown=Date.now()+250;}
-  else if(playerClass==='swordsman'){meleeAttack(25,80);attackCooldown=Date.now()+600;}
-  else{meleeAttack(18,100);attackCooldown=Date.now()+500;}
+  const wb=getWeaponBonus();
+  if(playerClass==='gunner'){shoot(wb);attackCooldown=Date.now()+250;}
+  else if(playerClass==='swordsman'){meleeAttack(25+wb,80);attackCooldown=Date.now()+600;}
+  else{meleeAttack(18+wb,100);attackCooldown=Date.now()+500;}
 }
-function shoot(){
+function shoot(wb=0){
   if(ammo<=0){playSFX('hit');if(ammoReserve>0){reload();}return;}
   ammo--;updateAmmo();playSFX('shoot');
   spawnParticles(player.x,player.y,'#4facfe',5);
   const hitDist=600,hitAngle=player.angle;
   const dx=Math.cos(hitAngle),dy=Math.sin(hitAngle);
-  checkBulletHit(player.x,player.y,dx,dy,hitDist,35);
+  checkBulletHit(player.x,player.y,dx,dy,hitDist,35+wb);
 }
 let reloading=false;
 function reload(){
@@ -1675,6 +1998,7 @@ function gameLoop(ts){
   updateParticles(dt);
   updateDrops();
   checkDropPickup();
+  if(isSecretMode)updateSecretPets(dt);
   canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;
   mmCanvas.width=mmCanvas.offsetWidth;mmCanvas.height=mmCanvas.offsetHeight;
   drawWorld();
@@ -1724,6 +2048,7 @@ function updateEnemies(dt){
       if(e.poisonTickAccum>=500){e.poisonTickAccum=0;e.hp-=3;if(e.hp<=0){killEnemy(e);return;}}
       if(e.poisonTimer<=0)e.poisoned=false;
     }
+    if(e.stunned){e.stunTimer-=dt;if(e.stunTimer<=0)e.stunned=false;return;}
     const dx=player.x-e.x,dy=player.y-e.y;
     const dist=Math.sqrt(dx*dx+dy*dy);
     if(dist<CELL*10)e.state='chase';
@@ -1768,8 +2093,9 @@ function updateBoss(dt){
 }
 function takeDamage(amt){
   if(paused)return;
-  const d=amt-(playerClass==='swordsman'?(level*2):playerClass==='farmer'?level:0);
-  hp=Math.max(0,hp-Math.max(1,d));
+  const def=(playerClass==='swordsman'?(level*2):playerClass==='farmer'?level:0)+getArmorBonus();
+  const d=Math.max(1,amt-def);
+  hp=Math.max(0,hp-d);
   playSFX('damage');updateBars();
   const flash=document.getElementById('dmgFlash');
   flash.classList.add('hit');setTimeout(()=>flash.classList.remove('hit'),200);
@@ -1864,31 +2190,128 @@ function renderPlayerList(){
 
 // ===== INVENTORY UI =====
 function openInventory(){
+  const _prevScreen=document.querySelector(".screen.active")?.id||"game";
   const grid=document.getElementById('invGrid');grid.innerHTML='';
+
+  // Equipment slots header
+  const eqSection=document.createElement('div');
+  eqSection.style.cssText='grid-column:1/-1;display:flex;gap:10px;padding:10px;background:rgba(245,200,66,0.04);border:1px solid rgba(245,200,66,0.15);border-radius:4px;margin-bottom:6px;align-items:center;flex-wrap:wrap;';
+  const eqTitle=document.createElement('div');
+  eqTitle.style.cssText='color:var(--gold);font-family:"Cinzel",serif;font-size:0.7rem;letter-spacing:2px;width:100%;margin-bottom:4px;';
+  eqTitle.textContent='⚔ สวมใส่อยู่';
+  eqSection.appendChild(eqTitle);
+
+  // Weapon slot
+  const wSlot=document.createElement('div');
+  wSlot.style.cssText='display:flex;align-items:center;gap:8px;flex:1;min-width:120px;';
+  const wData=equippedWeapon&&WEAPON_STATS[equippedWeapon];
+  wSlot.innerHTML=`<span style="font-size:1.4rem">${wData?wData.icon:'🔲'}</span><div><div style="color:var(--text);font-size:0.75rem;font-family:'Cinzel',serif;">${wData?wData.name:'ไม่มีอาวุธ'}</div><div style="color:var(--gold);font-size:0.65rem;">${wData?'+'+wData.dmgBonus+' DMG':''}</div></div>`;
+  eqSection.appendChild(wSlot);
+
+  // Armor slot
+  const aSlot=document.createElement('div');
+  aSlot.style.cssText='display:flex;align-items:center;gap:8px;flex:1;min-width:120px;';
+  const aData=equippedArmor&&ARMOR_STATS[equippedArmor];
+  aSlot.innerHTML=`<span style="font-size:1.4rem">${aData?aData.icon:'🔲'}</span><div><div style="color:var(--text);font-size:0.75rem;font-family:'Cinzel',serif;">${aData?aData.name:'ไม่มีชุดเกราะ'}</div><div style="color:#4facfe;font-size:0.65rem;">${aData?'+'+aData.defBonus+' DEF  +'+aData.maxHpBonus+' HP':''}</div></div>`;
+  eqSection.appendChild(aSlot);
+  grid.appendChild(eqSection);
+
+  // Divider label
+  const bagLabel=document.createElement('div');
+  bagLabel.style.cssText='grid-column:1/-1;color:var(--text2);font-family:"Cinzel",serif;font-size:0.65rem;letter-spacing:2px;padding:4px 0 2px;';
+  bagLabel.textContent='🎒 กระเป๋า';
+  grid.appendChild(bagLabel);
+
+  if(inventory.length===0){
+    const empty=document.createElement('div');
+    empty.style.cssText='color:var(--text2);font-size:0.8rem;grid-column:1/-1;text-align:center;padding:20px;';
+    empty.textContent='ยังไม่มีไอเทม';
+    grid.appendChild(empty);
+  }
+
   inventory.forEach((item,i)=>{
     const slot=document.createElement('div');
     slot.className=`inv-slot item-rarity-${item.rarity||'common'}`;
-    if(item.equipped)slot.classList.add('equipped');
-    slot.innerHTML=`<span class="item-icon">${item.icon}</span><span class="item-name">${item.name}</span>${item.qty>1?`<span class="item-qty">x${item.qty}</span>`:''}`;
+    const isEqW=item.type==='weapon'&&equippedWeapon===item.id;
+    const isEqA=item.type==='armor'&&equippedArmor===item.id;
+    if(isEqW||isEqA)slot.classList.add('equipped');
+
+    // Action label
+    let actionLabel='';
+    if(item.type==='consumable')actionLabel='<div style="position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:0.5rem;color:#2ecc71;font-family:Cinzel,serif;">ใช้</div>';
+    else if(item.type==='weapon'||item.type==='armor'){
+      if(isEqW||isEqA)actionLabel='<div style="position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:0.5rem;color:var(--gold);font-family:Cinzel,serif;">สวมอยู่</div>';
+      else actionLabel='<div style="position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:0.5rem;color:#4facfe;font-family:Cinzel,serif;">สวมใส่</div>';
+    }
+
+    slot.innerHTML=`<span class="item-icon">${item.icon}</span><span class="item-name">${item.name}</span>${item.qty>1?`<span class="item-qty">x${item.qty}</span>`:''}${actionLabel}`;
+
+    // Tooltip
+    if(item.desc||item.dmgBonus!==undefined){
+      slot.title=item.desc||'';
+    }
     slot.onclick=()=>useItem(i);
     grid.appendChild(slot);
   });
-  if(inventory.length===0)grid.innerHTML='<div style="color:var(--text2);font-size:0.8rem;grid-column:1/-1;text-align:center;padding:20px;">ยังไม่มีไอเทม</div>';
-  const prev=document.querySelector('.screen.active')?.id;
-  showScreen('inventory');
-  document.getElementById('inventory').dataset.prev=prev||'game';
-  if(prev==='game')pauseGame(true);
+
+  const prev=_prevScreen;
+  document.getElementById("inventory").dataset.prev=prev;
+  showScreen("inventory");
+  if(prev==="game"&&gameRunning)paused=true;
 }
+
 function useItem(i){
   const item=inventory[i];if(!item)return;
-  if(item.use){item.use();item.qty--;if(item.qty<=0)inventory.splice(i,1);playSFX('heal');}
-  else if(item.equip){item.equipped=!item.equipped;playSFX('pickup');}
+
+  if(item.type==='consumable'&&item.use){
+    item.use();
+    item.qty--;
+    if(item.qty<=0)inventory.splice(i,1);
+    playSFX('heal');
+
+  }else if(item.type==='weapon'){
+    // Only equip if matches player class
+    const wData=WEAPON_STATS[item.id];
+    if(!wData){showNotif('❌ ไม่รู้จักอาวุธนี้');return;}
+    if(wData.cls!==playerClass){showNotif(`❌ อาวุธนี้ใช้ได้เฉพาะ ${wData.cls} เท่านั้น`);return;}
+    if(equippedWeapon===item.id){
+      equippedWeapon=null;
+      showNotif(`🔲 ถอด ${item.name}`);
+    }else{
+      equippedWeapon=item.id;
+      showNotif(`⚔️ สวม ${item.name} (+${wData.dmgBonus} DMG)`);
+    }
+    weaponDmgBonus=getWeaponBonus();
+    playSFX('pickup');
+
+  }else if(item.type==='armor'){
+    const aData=ARMOR_STATS[item.id];
+    if(!aData)return;
+    if(equippedArmor===item.id){
+      // Unequip: remove maxHp bonus
+      maxHp=Math.max(100,maxHp-aData.maxHpBonus);
+      hp=Math.min(hp,maxHp);
+      equippedArmor=null;
+      showNotif(`🔲 ถอด ${item.name}`);
+    }else{
+      // Remove old armor bonus first
+      if(equippedArmor&&ARMOR_STATS[equippedArmor]){
+        maxHp=Math.max(100,maxHp-ARMOR_STATS[equippedArmor].maxHpBonus);
+        hp=Math.min(hp,maxHp);
+      }
+      equippedArmor=item.id;
+      maxHp+=aData.maxHpBonus;
+      showNotif(`🛡 สวม ${item.name} (+${aData.defBonus} DEF, +${aData.maxHpBonus} MaxHP)`);
+    }
+    armorDefBonus=getArmorBonus();
+    updateBars();
+    playSFX('pickup');
+  }
   openInventory();
 }
 function closeInventory(){
-  const prev=document.getElementById('inventory').dataset.prev||'game';
-  showScreen(prev);
-  if(prev==='game'){paused=false;}
+  paused=false;
+  showScreen('game');
 }
 
 // ===== LEADERBOARD =====
@@ -1978,7 +2401,20 @@ function startGame(solo=false){
   mp=maxMp=playerClass==='gunner'?60:playerClass==='farmer'?100:80;
   xp=0;score=0;kills=0;level=1;xpNeeded=100;
   ammo=30;ammoReserve=120;
-  inventory=JSON.parse(JSON.stringify(ITEMS.slice(0,3)));
+  // Reset equipment
+  equippedWeapon=null;equippedArmor=null;weaponDmgBonus=0;armorDefBonus=0;
+  // Build drop table for this class
+  buildDropTable();
+  // Starter inventory: 2 HP potions + starter weapon (already 'equipped')
+  const starterWeapon={gunner:'pistol_basic',swordsman:'sword_iron',farmer:'hoe_wood'};
+  const sw=starterWeapon[playerClass];
+  const swData=WEAPON_STATS[sw];
+  inventory=[
+    {id:'hp_pot',name:'HP Potion',icon:'🧪',rarity:'common',qty:2,type:'consumable',use:()=>{heal(30);showNotif('🧪 +30 HP!');}},
+    {id:'mp_pot',name:'MP Potion',icon:'💧',rarity:'common',qty:1,type:'consumable',use:()=>{mp=Math.min(maxMp,mp+30);updateBars();showNotif('💧 +30 MP!');}},
+    {id:sw,name:swData.name,icon:swData.icon,rarity:swData.rarity,qty:1,type:'weapon',desc:swData.desc},
+  ];
+  equippedWeapon=sw;
   particles=[];projectiles=[];drops=[];
   mapRooms=genMap();
   // Place player in first floor tile
@@ -1990,8 +2426,8 @@ function startGame(solo=false){
   spawnEnemies(mapRooms);
   buildSkillBar();updateBars();updateAmmo();
   const classNames={gunner:'GUNNER',swordsman:'SWORDSMAN',farmer:'FARMER'};
-  document.getElementById('hudClass').textContent=classNames[playerClass]||'';
-  document.getElementById('hudClass').style.color=classColors[playerClass]||'#fff';
+  document.getElementById('hudClass').textContent=isSecretMode?'💩 เก':classNames[playerClass]||'';
+  document.getElementById('hudClass').style.color=isSecretMode?'#8B4513':classColors[playerClass]||'#fff';
   document.getElementById('hudLevel').textContent='Lv.1';
   document.getElementById('playerListHud').innerHTML='';
   document.getElementById('bossBar').style.display='none';

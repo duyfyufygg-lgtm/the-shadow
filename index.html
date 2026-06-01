@@ -288,7 +288,7 @@
     <div class="menu-title">REALM OF<br>SHADOWS</div>
     <div class="menu-sub">First Blood Online • Season I</div>
     <div class="menu-divider"></div>
-    <button class="menu-btn primary" onclick="showScreen('classSelect')">⚔ เริ่มผจญภัย</button>
+    <button class="menu-btn primary" onclick="showScreen('classSelect');buildClassSelect();">⚔ เริ่มผจญภัย</button>
     <button class="menu-btn" onclick="showLeaderboard()">🏆 ตารางคะแนน</button>
     <button class="menu-btn" onclick="toggleMute()">🎵 เพลงประกอบ: <span id="muteLabel">เปิด</span></button>
     <button class="menu-btn" onclick="showScreen('settingsScreen')">⚙ ตั้งค่า</button>
@@ -299,48 +299,11 @@
 
 <!-- ===== CLASS SELECT ===== -->
 <div id="classSelect" class="screen">
-  <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% -10%,rgba(245,200,66,0.05),transparent 60%),linear-gradient(180deg,#020205,#050510,#020205);"></div>
+  <div style="position:absolute;inset:0;" id="csBackground"></div>
   <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:100%;padding:20px;">
-    <div class="cs-title">เลือกอาชีพของคุณ</div>
-    <div class="cs-sub">Choose Your Class</div>
-    <div class="class-grid" id="classGrid">
-      <div class="class-card gunner" onclick="selectClass('gunner',this)">
-        <div class="selected-badge">SELECTED</div>
-        <div class="class-icon" style="color:#4facfe;">🔫</div>
-        <div class="class-name">นักยิงปืน</div>
-        <div class="class-desc">ผู้เชี่ยวชาญอาวุธปืน โจมตีระยะไกล ความเร็วสูง</div>
-        <div class="class-stats">
-          <div class="stat-row"><span class="stat-label">HP</span><div class="stat-bar"><div class="stat-fill" style="width:60%"></div></div></div>
-          <div class="stat-row"><span class="stat-label">ATK</span><div class="stat-bar"><div class="stat-fill" style="width:85%"></div></div></div>
-          <div class="stat-row"><span class="stat-label">SPD</span><div class="stat-bar"><div class="stat-fill" style="width:90%"></div></div></div>
-          <div class="stat-row"><span class="stat-label">DEF</span><div class="stat-bar"><div class="stat-fill" style="width:45%"></div></div></div>
-        </div>
-      </div>
-      <div class="class-card swordsman" onclick="selectClass('swordsman',this)">
-        <div class="selected-badge">SELECTED</div>
-        <div class="class-icon" style="color:#f5c842;">⚔️</div>
-        <div class="class-name">นักดาบ</div>
-        <div class="class-desc">นักรบผู้ชำนาญดาบ ป้องกันสูง โจมตีระยะประชิด</div>
-        <div class="class-stats">
-          <div class="stat-row"><span class="stat-label">HP</span><div class="stat-bar"><div class="stat-fill" style="width:90%"></div></div></div>
-          <div class="stat-row"><span class="stat-label">ATK</span><div class="stat-bar"><div class="stat-fill" style="width:80%"></div></div></div>
-          <div class="stat-row"><span class="stat-label">SPD</span><div class="stat-bar"><div class="stat-fill" style="width:65%"></div></div></div>
-          <div class="stat-row"><span class="stat-label">DEF</span><div class="stat-bar"><div class="stat-fill" style="width:95%"></div></div></div>
-        </div>
-      </div>
-      <div class="class-card farmer" onclick="selectClass('farmer',this)">
-        <div class="selected-badge">SELECTED</div>
-        <div class="class-icon" style="color:#2ecc71;">🌿</div>
-        <div class="class-name">ชาวสวน</div>
-        <div class="class-desc">ผู้เชี่ยวชาญธรรมชาติ ฮีลได้ ใช้พืชพิษโจมตี</div>
-        <div class="class-stats">
-          <div class="stat-row"><span class="stat-label">HP</span><div class="stat-bar"><div class="stat-fill" style="width:75%"></div></div></div>
-          <div class="stat-row"><span class="stat-label">ATK</span><div class="stat-bar"><div class="stat-fill" style="width:65%"></div></div></div>
-          <div class="stat-row"><span class="stat-label">SPD</span><div class="stat-bar"><div class="stat-fill" style="width:75%"></div></div></div>
-          <div class="stat-row"><span class="stat-label">HEAL</span><div class="stat-bar"><div class="stat-fill" style="width:100%"></div></div></div>
-        </div>
-      </div>
-    </div>
+    <div class="cs-title" id="csTitle">เลือกอาชีพของคุณ</div>
+    <div class="cs-sub" id="csSub">Choose Your Class</div>
+    <div class="class-grid" id="classGrid"></div>
     <div class="cs-actions">
       <button class="cs-btn back" onclick="showScreen('menu')">← กลับ</button>
       <button class="cs-btn start" id="startBtn" onclick="goToLobby()" disabled>เข้าสู่เกม →</button>
@@ -569,7 +532,10 @@ function cycleFOV(){fovIndex=(fovIndex+1)%fovOptions.length;FOV=fovOptions[fovIn
 function toggleSecretMode(on){
   isSecretMode=on;
   document.getElementById('secretPreview').style.display=on?'block':'none';
+  // If class select is open, rebuild it
+  if(document.getElementById('classSelect').classList.contains('active'))buildClassSelect();
   if(on)showNotif('🔴 โหมดลับเปิดแล้ว! เก + เจ้าเป็ด + เจ้าไก่ พร้อม!',3000);
+  else showNotif('⚪ โหมดปกติ',2000);
 }
 function updateSettingsUI(){
   document.getElementById('musicToggle').textContent=muted?'ปิด':'เปิด';
@@ -694,7 +660,11 @@ const classColors={gunner:'#4facfe',swordsman:'#f5c842',farmer:'#2ecc71'};
 const SKILLS={
   gunner:[{key:'Q',icon:'💥',name:'Rapid Fire',cd:5000},{key:'E',icon:'🎯',name:'Snipe',cd:8000},{key:'R',icon:'💣',name:'Grenade',cd:12000},{key:'F',icon:'🛡',name:'Evade',cd:6000}],
   swordsman:[{key:'Q',icon:'⚔️',name:'Slash',cd:3000},{key:'E',icon:'🌀',name:'Spin Slash',cd:6000},{key:'R',icon:'🛡️',name:'Block',cd:4000},{key:'F',icon:'⚡',name:'Charge',cd:9000}],
-  farmer:[{key:'Q',icon:'🌿',name:'Heal',cd:5000},{key:'E',icon:'🌾',name:'Poison',cd:7000},{key:'R',icon:'🍄',name:'Spore',cd:10000},{key:'F',icon:'🌱',name:'Regrow',cd:15000}]
+  farmer:[{key:'Q',icon:'🌿',name:'Heal',cd:5000},{key:'E',icon:'🌾',name:'Poison',cd:7000},{key:'R',icon:'🍄',name:'Spore',cd:10000},{key:'F',icon:'🌱',name:'Regrow',cd:15000}],
+  // SECRET MODE
+  kae:[{key:'Q',icon:'💩',name:'ขว้างอึ',cd:3000},{key:'E',icon:'🤢',name:'อึพิษ',cd:6000},{key:'R',icon:'💨',name:'ปล่อยก๊าซ',cd:9000},{key:'F',icon:'🏃',name:'วิ่งหนี',cd:5000}],
+  duck:[{key:'Q',icon:'🦆',name:'ทิ้งบอมบ์',cd:4000},{key:'E',icon:'💨',name:'กระพือปีก',cd:5000},{key:'R',icon:'🌊',name:'คลื่นน้ำ',cd:8000},{key:'F',icon:'🥚',name:'ระเบิดไข่',cd:12000}],
+  chicken:[{key:'Q',icon:'🐓',name:'จิกสุดแรง',cd:2500},{key:'E',icon:'📣',name:'ขันดัง',cd:6000},{key:'R',icon:'🌪️',name:'วิ่งพล่าน',cd:7000},{key:'F',icon:'🪶',name:'ขนปลิว',cd:10000}],
 };
 
 // ===== WEAPON STATS (equipped weapon boosts damage) =====
@@ -761,6 +731,82 @@ function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
+// ===== CLASS SELECT BUILDER =====
+const NORMAL_CLASSES=[
+  {id:'gunner',   icon:'🔫', name:'นักยิงปืน',  desc:'ผู้เชี่ยวชาญอาวุธปืน โจมตีระยะไกล ความเร็วสูง', color:'#4facfe',
+   stats:{HP:60,ATK:85,SPD:90,DEF:45},
+   skills:['💥 Rapid Fire','🎯 Snipe','💣 Grenade','🛡 Evade']},
+  {id:'swordsman',icon:'⚔️', name:'นักดาบ',     desc:'นักรบผู้ชำนาญดาบ ป้องกันสูง โจมตีระยะประชิด',   color:'#f5c842',
+   stats:{HP:90,ATK:80,SPD:65,DEF:95},
+   skills:['⚔️ Slash','🌀 Spin Slash','🛡️ Block','⚡ Charge']},
+  {id:'farmer',  icon:'🌿', name:'ชาวสวน',    desc:'ผู้เชี่ยวชาญธรรมชาติ ฮีลได้ ใช้พืชพิษโจมตี',  color:'#2ecc71',
+   stats:{HP:75,ATK:65,SPD:75,HEAL:100},
+   skills:['🌿 Heal','🌾 Poison','🍄 Spore','🌱 Regrow']},
+];
+const SECRET_CLASSES=[
+  {id:'kae',    icon:'💩', name:'เก',       desc:'นักรบผู้กล้าหาญ อาวุธประจำตัว: ก้อนอึ ฟาดศัตรูในระยะประชิด', color:'#8B4513',
+   stats:{HP:80,ATK:70,SPD:85,CHAOS:90},
+   skills:['💩 ขว้างอึ','🤢 อึพิษ','💨 ปล่อยก๊าซ','🏃 วิ่งหนี'],
+   bg:'rgba(139,69,19,0.08)',border:'rgba(139,69,19,0.4)'},
+  {id:'duck',   icon:'🦆', name:'เจ้าเป็ด', desc:'เป็ดน้อยผู้กล้า บินได้ ทิ้งบอมบ์ก้อนอึจากกลางอากาศ',       color:'#4facfe',
+   stats:{HP:60,ATK:80,SPD:95,AIR:100},
+   skills:['🦆 ทิ้งบอมบ์','💨 กระพือปีก','🌊 คลื่นน้ำ','🥚 ระเบิดไข่'],
+   bg:'rgba(79,172,254,0.08)',border:'rgba(79,172,254,0.4)'},
+  {id:'chicken',icon:'🐓', name:'เจ้าไก่',  desc:'ไก่บ้าพลัง วิ่งไล่จิก ส่งเสียงร้องทำให้ศัตรู Stun',           color:'#2ecc71',
+   stats:{HP:70,ATK:90,SPD:100,STUN:85},
+   skills:['🐓 จิกสุดแรง','📣 ขันดัง','🌪️ วิ่งพล่าน','🪶 ขนปลิว'],
+   bg:'rgba(46,204,113,0.08)',border:'rgba(46,204,113,0.4)'},
+];
+
+function buildClassSelect(){
+  const grid=document.getElementById('classGrid');
+  const bg=document.getElementById('csBackground');
+  const title=document.getElementById('csTitle');
+  const sub=document.getElementById('csSub');
+  grid.innerHTML='';
+  playerClass=null;
+  document.getElementById('startBtn').disabled=true;
+
+  if(isSecretMode){
+    bg.style.background='radial-gradient(ellipse at 50% -10%,rgba(255,50,50,0.08),transparent 60%),linear-gradient(180deg,#050202,#100505,#050202)';
+    title.style.color='#ff4444';
+    title.textContent='⚠ เลือกตัวละคร — โหมดลับ';
+    sub.textContent='Secret Mode — Choose Your Gang';
+    SECRET_CLASSES.forEach(c=>grid.appendChild(makeCard(c,true)));
+  }else{
+    bg.style.background='radial-gradient(ellipse at 50% -10%,rgba(245,200,66,0.05),transparent 60%),linear-gradient(180deg,#020205,#050510,#020205)';
+    title.style.color='var(--gold)';
+    title.textContent='เลือกอาชีพของคุณ';
+    sub.textContent='Choose Your Class';
+    NORMAL_CLASSES.forEach(c=>grid.appendChild(makeCard(c,false)));
+  }
+}
+
+function makeCard(c,secret){
+  const card=document.createElement('div');
+  card.className='class-card '+c.id;
+  card.style.cssText=secret?`border-color:${c.border};background:${c.bg};`:'';
+  // Skill list HTML
+  const skillsHtml=c.skills.map(s=>`<div style="font-size:0.6rem;color:var(--text2);padding:1px 0;">${s}</div>`).join('');
+  // Stats HTML
+  const statsHtml=Object.entries(c.stats).map(([k,v])=>`
+    <div class="stat-row"><span class="stat-label">${k}</span>
+    <div class="stat-bar"><div class="stat-fill" style="width:${v}%;background:${c.color};"></div></div></div>
+  `).join('');
+  card.innerHTML=`
+    <div class="selected-badge">SELECTED</div>
+    <div class="class-icon" style="color:${c.color};font-size:${secret?'2.2':'1.8'}rem;">${c.icon}</div>
+    <div class="class-name" style="color:${c.color};">${c.name}</div>
+    <div class="class-desc">${c.desc}</div>
+    <div class="class-stats">${statsHtml}</div>
+    <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.06);">
+      <div style="font-size:0.55rem;color:${c.color};letter-spacing:1px;margin-bottom:3px;font-family:'Cinzel',serif;">SKILLS</div>
+      ${skillsHtml}
+    </div>`;
+  card.onclick=()=>selectClass(c.id,card);
+  return card;
+}
+
 function selectClass(cls,el){
   playerClass=cls;
   document.querySelectorAll('.class-card').forEach(c=>c.classList.remove('selected'));
@@ -1499,7 +1545,7 @@ function drawWeapon(W,H){
   ctx.save();
 
   // ===== SECRET MODE: ก้อนอึ =====
-  if(isSecretMode){
+  if(playerClass==='kae'||playerClass==='duck'||playerClass==='chicken'){
     const poopBob=Math.sin(Date.now()*0.003)*3;
     ctx.save();ctx.translate(cx+W*0.1,cy+poopBob-swingT*H*0.06);
     if(swingT>0){ctx.rotate(-0.3+swingT*0.8);}
@@ -1799,7 +1845,7 @@ function buildSkillBar(){
     slot.innerHTML=`<span class="key">${s.key}</span><span class="icon">${s.icon}</span><div class="cd-overlay" id="cdov_${i}" style="display:none"></div>`;
     bar.appendChild(slot);
   });
-  document.getElementById('ammoHud').style.display=playerClass==='gunner'?'block':'none';
+  document.getElementById('ammoHud').style.display=(playerClass==='gunner'||playerClass==='duck')?'block':'none';
 }
 function useSkill(idx){
   if(paused||!gameRunning)return;
@@ -1810,6 +1856,60 @@ function useSkill(idx){
   if(playerClass==='gunner'){if(idx===0){rapidFire();}else if(idx===1){snipe();}else if(idx===2){throwGrenade();}else{evade();}}
   else if(playerClass==='swordsman'){if(idx===0){slash();}else if(idx===1){spinSlash();}else if(idx===2){block();}else{charge();}}
   else if(playerClass==='farmer'){if(idx===0){healSelf();}else if(idx===1){poisonAoe();}else if(idx===2){sporeCloud();}else{regrow();}}
+  // ===== SECRET SKILLS =====
+  else if(playerClass==='kae'){
+    if(idx===0){// ขว้างอึ
+      const gx=player.x+Math.cos(player.angle)*CELL*4,gy=player.y+Math.sin(player.angle)*CELL*4;
+      spawnParticles(gx,gy,'#8B4513',15);showNotif('💩 ขว้างอึ!');
+      enemies.filter(e=>!e.dead).forEach(e=>{if(Math.hypot(e.x-gx,e.y-gy)<CELL*2.5)damageEnemy(e,45);});
+    }else if(idx===1){// อึพิษ
+      enemies.filter(e=>!e.dead).forEach(e=>{if(Math.hypot(e.x-player.x,e.y-player.y)<CELL*5){e.poisoned=true;e.poisonTimer=5000;}});
+      spawnParticles(player.x,player.y,'#2ecc71',20);showNotif('🤢 อึพิษ! ศัตรูติดพิษ');
+    }else if(idx===2){// ปล่อยก๊าซ
+      enemies.filter(e=>!e.dead).forEach(e=>{if(Math.hypot(e.x-player.x,e.y-player.y)<CELL*6){e.stunned=true;e.stunTimer=3;}});
+      spawnParticles(player.x,player.y,'#f1c40f',25);showNotif('💨 ก๊าซ!! Stun ทุกตัวรอบข้าง!');playSFX('boss');
+    }else{// วิ่งหนี
+      evade();evade();showNotif('🏃 วิ่งหนีสุดแรง!');
+    }
+  }else if(playerClass==='duck'){
+    if(idx===0){// ทิ้งบอมบ์
+      const bx=player.x+Math.cos(player.angle)*CELL*5,by=player.y+Math.sin(player.angle)*CELL*5;
+      spawnParticles(bx,by,'#8B4513',20);showNotif('🦆💣 ทิ้งบอมบ์อึ! -60 AOE');
+      enemies.filter(e=>!e.dead).forEach(e=>{if(Math.hypot(e.x-bx,e.y-by)<CELL*4)damageEnemy(e,60);});playSFX('boss');
+    }else if(idx===1){// กระพือปีก
+      spawnParticles(player.x,player.y,'#4facfe',20);
+      enemies.filter(e=>!e.dead).forEach(e=>{
+        if(Math.hypot(e.x-player.x,e.y-player.y)<CELL*5){const a=Math.atan2(e.y-player.y,e.x-player.x);e.x+=Math.cos(a)*CELL*3;e.y+=Math.sin(a)*CELL*3;}
+      });showNotif('💨 กระพือปีก! ศัตรูปลิวว่อน!');
+    }else if(idx===2){// คลื่นน้ำ
+      enemies.filter(e=>!e.dead).forEach(e=>{if(Math.hypot(e.x-player.x,e.y-player.y)<CELL*7)damageEnemy(e,30);});
+      spawnParticles(player.x,player.y,'#00bcd4',30);showNotif('🌊 คลื่นน้ำ!');
+    }else{// ระเบิดไข่
+      for(let i=0;i<4;i++){
+        const a=player.angle+i*Math.PI/2;
+        const ex=player.x+Math.cos(a)*CELL*3,ey=player.y+Math.sin(a)*CELL*3;
+        spawnParticles(ex,ey,'#f5c842',10);
+        enemies.filter(e=>!e.dead).forEach(e=>{if(Math.hypot(e.x-ex,e.y-ey)<CELL*2)damageEnemy(e,35);});
+      }showNotif('🥚×4 ระเบิดไข่รอบทิศ!');playSFX('boss');
+    }
+  }else if(playerClass==='chicken'){
+    if(idx===0){// จิกสุดแรง
+      meleeAttack(55,120);showNotif('🐓 จิกสุดแรง! -55');
+    }else if(idx===1){// ขันดัง
+      enemies.filter(e=>!e.dead).forEach(e=>{if(Math.hypot(e.x-player.x,e.y-player.y)<CELL*8){e.stunned=true;e.stunTimer=4;}});
+      spawnParticles(player.x,player.y,'#f5c842',30);showNotif('📣 ขันดัง! Stun รัศมี 8 ช่อง 4 วิ!');playSFX('boss');
+    }else if(idx===2){// วิ่งพล่าน
+      const a=player.angle;
+      for(let i=0;i<6;i++){setTimeout(()=>{
+        const ra=a+((Math.random()-0.5)*1.5);
+        player.x+=Math.cos(ra)*CELL*1.5;player.y+=Math.sin(ra)*CELL*1.5;
+        meleeAttack(20,80);
+      },i*80);}showNotif('🌪️ วิ่งพล่าน! โจมตี 6 ครั้ง!');
+    }else{// ขนปลิว
+      enemies.filter(e=>!e.dead).forEach(e=>{if(Math.hypot(e.x-player.x,e.y-player.y)<CELL*6)damageEnemy(e,20);});
+      heal(20);spawnParticles(player.x,player.y,'#fff',25);showNotif('🪶 ขนปลิว! ดาเมจ AOE + ฮีล 20');
+    }
+  }
   showCooldown(idx,s.cd);
 }
 function showCooldown(idx,ms){
@@ -1826,7 +1926,26 @@ function attack(){
   const wb=getWeaponBonus();
   if(playerClass==='gunner'){shoot(wb);attackCooldown=Date.now()+250;}
   else if(playerClass==='swordsman'){meleeAttack(25+wb,80);attackCooldown=Date.now()+600;}
-  else{meleeAttack(18+wb,100);attackCooldown=Date.now()+500;}
+  else if(playerClass==='farmer'){meleeAttack(18+wb,100);attackCooldown=Date.now()+500;}
+  // ===== SECRET CLASSES =====
+  else if(playerClass==='kae'){
+    // ฟาดด้วยก้อนอึ ระยะประชิด
+    meleeAttack(30,90);
+    spawnParticles(player.x+Math.cos(player.angle)*CELL,player.y+Math.sin(player.angle)*CELL,'#8B4513',6);
+    attackCooldown=Date.now()+550;
+  }
+  else if(playerClass==='duck'){
+    // ปล่อยระเบิดอึเล็กๆ
+    const bx=player.x+Math.cos(player.angle)*CELL*3,by=player.y+Math.sin(player.angle)*CELL*3;
+    enemies.filter(e=>!e.dead).forEach(e=>{if(Math.hypot(e.x-bx,e.y-by)<CELL*2)damageEnemy(e,28);});
+    spawnParticles(bx,by,'#8B4513',8);playSFX('shoot');
+    attackCooldown=Date.now()+400;
+  }
+  else if(playerClass==='chicken'){
+    // จิกเร็ว
+    meleeAttack(22,70);playSFX('slash');
+    attackCooldown=Date.now()+300;
+  }
 }
 function shoot(wb=0){
   if(ammo<=0){playSFX('hit');if(ammoReserve>0){reload();}return;}
@@ -2397,18 +2516,19 @@ function spawnScorePopup(text,wx,wy,color){
 function startGame(solo=false){
   isSolo=solo;
   if(!playerName){playerName=document.getElementById('playerNameInput')?.value.trim()||'Hero';}
-  hp=maxHp=playerClass==='swordsman'?120:playerClass==='farmer'?100:90;
-  mp=maxMp=playerClass==='gunner'?60:playerClass==='farmer'?100:80;
+  hp=maxHp=playerClass==='swordsman'?120:playerClass==='farmer'?100:playerClass==='kae'?80:playerClass==='duck'?60:playerClass==='chicken'?70:90;
+  mp=maxMp=playerClass==='gunner'?60:playerClass==='farmer'?100:playerClass==='duck'?80:playerClass==='chicken'?70:playerClass==='kae'?50:80;
   xp=0;score=0;kills=0;level=1;xpNeeded=100;
   ammo=30;ammoReserve=120;
   // Reset equipment
   equippedWeapon=null;equippedArmor=null;weaponDmgBonus=0;armorDefBonus=0;
-  // Build drop table for this class
-  buildDropTable();
-  // Starter inventory: 2 HP potions + starter weapon (already 'equipped')
-  const starterWeapon={gunner:'pistol_basic',swordsman:'sword_iron',farmer:'hoe_wood'};
-  const sw=starterWeapon[playerClass];
-  const swData=WEAPON_STATS[sw];
+  // Build drop table — secret classes use farmer drop table
+  const dropClass=isSecretMode?'farmer':playerClass;
+  const _savedClass=playerClass;playerClass=dropClass;buildDropTable();playerClass=_savedClass;
+  // Starter weapon
+  const starterWeapon={gunner:'pistol_basic',swordsman:'sword_iron',farmer:'hoe_wood',kae:'poop_basic',duck:'egg_basic',chicken:'beak_basic'};
+  const sw=starterWeapon[playerClass]||'pistol_basic';
+  const swData=WEAPON_STATS[sw]||{name:'ก้อนอึ',icon:'💩',rarity:'common',dmgBonus:0,desc:'อาวุธเริ่มต้น'};
   inventory=[
     {id:'hp_pot',name:'HP Potion',icon:'🧪',rarity:'common',qty:2,type:'consumable',use:()=>{heal(30);showNotif('🧪 +30 HP!');}},
     {id:'mp_pot',name:'MP Potion',icon:'💧',rarity:'common',qty:1,type:'consumable',use:()=>{mp=Math.min(maxMp,mp+30);updateBars();showNotif('💧 +30 MP!');}},
@@ -2425,9 +2545,10 @@ function startGame(solo=false){
   player.angle=0;player.pitch=0;player.z=1;player.vz=0;
   spawnEnemies(mapRooms);
   buildSkillBar();updateBars();updateAmmo();
-  const classNames={gunner:'GUNNER',swordsman:'SWORDSMAN',farmer:'FARMER'};
-  document.getElementById('hudClass').textContent=isSecretMode?'💩 เก':classNames[playerClass]||'';
-  document.getElementById('hudClass').style.color=isSecretMode?'#8B4513':classColors[playerClass]||'#fff';
+  const classNames={gunner:'GUNNER',swordsman:'SWORDSMAN',farmer:'FARMER',kae:'เก 💩',duck:'เจ้าเป็ด 🦆',chicken:'เจ้าไก่ 🐓'};
+  const classColorsAll={...classColors,kae:'#8B4513',duck:'#4facfe',chicken:'#2ecc71'};
+  document.getElementById('hudClass').textContent=classNames[playerClass]||'';
+  document.getElementById('hudClass').style.color=classColorsAll[playerClass]||'#fff';
   document.getElementById('hudLevel').textContent='Lv.1';
   document.getElementById('playerListHud').innerHTML='';
   document.getElementById('bossBar').style.display='none';

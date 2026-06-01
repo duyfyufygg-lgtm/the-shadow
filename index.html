@@ -311,6 +311,24 @@
   </div>
 </div>
 
+<!-- ===== NAME INPUT ===== -->
+<div id="nameScreen" class="screen">
+  <div style="position:absolute;inset:0;background:linear-gradient(180deg,#020205,#050510,#020205);"></div>
+  <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:20px;">
+    <div style="font-family:'Cinzel Decorative',cursive;font-size:1.3rem;color:var(--gold);letter-spacing:4px;">ตั้งชื่อตัวละคร</div>
+    <div style="color:var(--text2);font-size:0.7rem;letter-spacing:3px;">ENTER YOUR NAME</div>
+    <div id="nameClassPreview" style="font-size:3rem;margin:8px 0;"></div>
+    <input id="nameInput" style="background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text);font-family:'Cinzel',serif;font-size:1.1rem;padding:12px 24px;text-align:center;width:260px;max-width:90%;border-radius:4px;outline:none;letter-spacing:2px;" placeholder="ชื่อผู้เล่น..." maxlength="16" oninput="checkNameInput()">
+    <div style="display:flex;gap:12px;margin-top:8px;">
+      <button class="cs-btn back" onclick="showScreen('classSelect');buildClassSelect()">← กลับ</button>
+      <button class="cs-btn start" id="nameConfirmBtn" onclick="confirmName()" disabled>เริ่มเลย! →</button>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px;">
+      <button style="background:rgba(79,172,254,0.1);border:1px solid rgba(79,172,254,0.3);color:#4facfe;font-family:'Cinzel',serif;font-size:0.7rem;padding:6px 14px;cursor:pointer;border-radius:3px;" onclick="startMultiplayer()">🌐 มัลติเพลเยอร์</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== LOBBY ===== -->
 <div id="lobby" class="screen">
   <div style="position:absolute;inset:0;background:linear-gradient(180deg,#020205,#050510,#020205);"></div>
@@ -730,6 +748,30 @@ function buildDropTable(){
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  // Update name screen preview when shown
+  if(id==='nameScreen'){
+    const icons={gunner:'🔫',swordsman:'⚔️',farmer:'🌿',kae:'💩',duck:'🦆',chicken:'🐓'};
+    document.getElementById('nameClassPreview').textContent=icons[playerClass]||'⚔️';
+    document.getElementById('nameInput').value=playerName||'';
+    checkNameInput();
+    setTimeout(()=>document.getElementById('nameInput').focus(),100);
+  }
+}
+function checkNameInput(){
+  const val=document.getElementById('nameInput').value.trim();
+  document.getElementById('nameConfirmBtn').disabled=val.length<1;
+}
+function confirmName(){
+  const val=document.getElementById('nameInput').value.trim();
+  if(!val)return;
+  playerName=val;
+  startGame(true);
+}
+function startMultiplayer(){
+  const val=document.getElementById('nameInput').value.trim();
+  if(!val){showNotif('❗ ใส่ชื่อก่อนนะ!');return;}
+  playerName=val;
+  showScreen('lobby');loadRooms();
 }
 // ===== CLASS SELECT BUILDER =====
 const NORMAL_CLASSES=[
@@ -811,8 +853,8 @@ function selectClass(cls,el){
   playerClass=cls;
   document.querySelectorAll('.class-card').forEach(c=>c.classList.remove('selected'));
   el.classList.add('selected');
-  document.getElementById('startBtn').disabled=false;
   playSFX('pickup');
+  setTimeout(()=>showScreen('nameScreen'),300);
 }
 function goToLobby(){
   if(!playerClass)return;
